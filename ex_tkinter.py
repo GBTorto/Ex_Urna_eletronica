@@ -170,14 +170,45 @@ def lista_candidatos():
         info_label.configure(text=f"{candidatos_json[indice_atual[0]]['nome']} ({candidatos_json[indice_atual[0]]['partido']}) {candidatos_json[indice_atual[0]]['numero']}")
 
     def deletar_candidato():
-        if 0 <= indice_atual < len(candidatos_json):
-            candidato_deletado = candidatos_json.pop(indice_atual)
-        
-        with open(arquivo_json, "w") as file:
-            json.dump(candidatos_json, file, indent=4)
+        if 0 <= indice_atual[0] < len(candidatos_json):
+            # Caixa de mensagem mais informativa
+            resposta = messagebox.askyesno(
+                "Confirmar Exclusão",
+                f"Tem certeza que deseja excluir permanentemente o candidato:\n\n"
+                f"Nome: {candidatos_json[indice_atual[0]]['nome']}\n"
+                f"Número: {candidatos_json[indice_atual[0]]['numero']}\n"
+                f"Partido: {candidatos_json[indice_atual[0]]['partido']}\n\n"
+                "Esta ação não pode ser desfeita!",
+                icon='warning',
+                parent=janela_candidatos
+            )
+            
+            if resposta:
+                candidato_removido = candidatos_json.pop(indice_atual[0])
+                with open(arquivo_json, "w") as file:
+                    json.dump(candidatos_json, file, indent=4)
+                
+                # Atualizar a exibição
+                if candidatos_json:
+                    indice_atual[0] = max(0, indice_atual[0] - 1)
+                    trocar_imagem()
+                else:
+                    imagem_label.configure(image="", text="Nenhum candidato cadastrado")
+                    info_label.configure(text="")
+                
+                messagebox.showinfo(
+                    "Candidato Removido",
+                    f"Candidato {candidato_removido['nome']} foi removido com sucesso."
+                )
+        else:
+            messagebox.showwarning(
+                "Nenhum Candidato",
+                "Não há candidatos para remover ou a lista está vazia.",
+                icon='warning'
+            )
 
     tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem).place(x=700, y=100)
-    tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem_anterior).place(x=100, y=100)
+    tk.Button(janela_candidatos, text="Anterior", command=trocar_imagem_anterior).place(x=100, y=100)
     tk.Button(janela_candidatos, text="Deletar candidato", command=deletar_candidato).pack(pady=5)
 
 def iniciar_votacao():

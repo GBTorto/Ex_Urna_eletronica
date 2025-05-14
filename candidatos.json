@@ -54,12 +54,5 @@
         "partido": "VND",
         "votos": 0,
         "imagem": "imagens_candidatos/homem4.png"
-    },
-    {
-        "numero": "123123",
-        "nome": "awdasdwa",
-        "partido": "adwdasdwa",
-        "votos": 0,
-        "imagem": ""
     }
 ]
