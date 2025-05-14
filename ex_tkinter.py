@@ -20,14 +20,14 @@ janela.title("Urna Eletrônica")
 # Obter largura e altura da tela
 largura_tela = janela.winfo_screenwidth()
 altura_tela = janela.winfo_screenheight()
-largura, altura = 1000, 500
+largura, altura = 800, 500
 
 # Calcular coordenadas x e y para centralizar
 x = (largura_tela // 2) - (largura // 2)
 y = (altura_tela // 2) - (altura // 2)
 
 def mostra_menu():
-    janela.geometry(f"{largura_tela}x{altura_tela}")
+    janela.geometry(f"{largura}x{altura}+{x}+{y}")
     janela.configure(padx=20, pady=20)
     label_menu = tk.Label(janela, text="Escolha uma opção:")
     label_menu.pack(pady=10)
@@ -39,7 +39,7 @@ def mostra_menu():
 def cadastra_candidato():
     janela_cadastro = tk.Toplevel(janela)
     janela_cadastro.title("Cadastro de Candidato")
-    janela_cadastro.geometry(f"{largura_tela}x{altura_tela}")
+    janela_cadastro.geometry(f"{largura}x{altura}+{x}+{y}")
 
     caminho_imagem = tk.StringVar(value="")
     foto = [None]
@@ -119,7 +119,7 @@ def lista_candidatos():
 
     janela_candidatos = tk.Toplevel(janela)
     janela_candidatos.title("Candidatos")
-    janela_candidatos.geometry(f"{largura_tela}x{altura_tela}")
+    janela_candidatos.geometry(f"{largura}x{altura}+{x}+{y}")
 
     fotos = []
     indice_atual = [0]
@@ -144,15 +144,41 @@ def lista_candidatos():
             indice_atual[0] = (indice_atual[0] + 1) % len(candidatos_json)
             novo_caminho = candidatos_json[indice_atual[0]]["imagem"]
             imagem = Image.open(novo_caminho).resize((150, 150))
+
             nova_foto = ImageTk.PhotoImage(imagem)
             fotos.append(nova_foto)
             imagem_label.configure(image=nova_foto)
+            
+        except (KeyError, FileNotFoundError, AttributeError):
+            imagem_label.configure(image="", text="Foto do candidato não registrada")
+            
+        info_label.configure(text=f"{candidatos_json[indice_atual[0]]['nome']} ({candidatos_json[indice_atual[0]]['partido']}) {candidatos_json[indice_atual[0]]['numero']}")
+    
+    def trocar_imagem_anterior():
+        try:
+            indice_atual[0] = (indice_atual[0] - 1) % len(candidatos_json)
+            novo_caminho = candidatos_json[indice_atual[0]]["imagem"]
+            imagem = Image.open(novo_caminho).resize((150, 150))
+
+            nova_foto = ImageTk.PhotoImage(imagem)
+            fotos.append(nova_foto)
+            imagem_label.configure(image=nova_foto)
+
         except (KeyError, FileNotFoundError, AttributeError):
             imagem_label.configure(image="", text="Foto do candidato não registrada")
             
         info_label.configure(text=f"{candidatos_json[indice_atual[0]]['nome']} ({candidatos_json[indice_atual[0]]['partido']}) {candidatos_json[indice_atual[0]]['numero']}")
 
-    tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem).pack(pady=5)
+    def deletar_candidato():
+        if 0 <= indice_atual < len(candidatos_json):
+            candidato_deletado = candidatos_json.pop(indice_atual)
+        
+        with open(arquivo_json, "w") as file:
+            json.dump(candidatos_json, file, indent=4)
+
+    tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem).place(x=700, y=100)
+    tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem_anterior).place(x=100, y=100)
+    tk.Button(janela_candidatos, text="Deletar candidato", command=deletar_candidato).pack(pady=5)
 
 def iniciar_votacao():
     global votacao_ativa
@@ -163,7 +189,7 @@ def registrar_voto():
     if votacao_ativa:
         janela_votacao = tk.Toplevel(janela)
         janela_votacao.title("Votação")
-        janela_votacao.geometry(f"{largura_tela}x{altura_tela}")
+        janela_votacao.geometry(f"{largura}x{altura}+{x}+{y}")
         tk.Label(janela_votacao, text="Digite sua matrícula:").pack(pady=5)
         entrada_matricula = tk.Entry(janela_votacao)
         entrada_matricula.pack(pady=5)
@@ -202,7 +228,7 @@ def registrar_voto():
 def imprime_relatorio():
     janela_relatorio = tk.Toplevel(janela)
     janela_relatorio.title("Resultados")
-    janela_relatorio.geometry(f"{largura_tela}x{altura_tela}")
+    janela_relatorio.geometry(f"{largura}x{altura}+{x}+{y}")
     total_votos = sum(c["votos"] for c in candidatos_json)
     if total_votos > 0:
         for candidato in candidatos_json:
