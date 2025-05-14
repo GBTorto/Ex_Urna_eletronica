@@ -1,12 +1,16 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
 from tkinter import scrolledtext as st
 import json
 from PIL import Image, ImageTk
 
 arquivo_json = "candidatos.json"
 
-candidatos = []
+with open(arquivo_json, "r") as file:
+    candidatos_json = json.load(file)
+
+# candidatos = []
 votantes = set()
 votacao_ativa = False
 
@@ -27,8 +31,8 @@ def mostra_menu():
     janela.configure(padx=20, pady=20)
     label_menu = tk.Label(janela, text="Escolha uma opção:")
     label_menu.pack(pady=10)
-    tk.Button(janela, text="Cadastro de Candidato", command=cadastra_candidato).pack(pady=5)
     tk.Button(janela, text="Candidatos", command=lista_candidatos).pack(pady=5)
+    tk.Button(janela, text="Cadastro de Candidato", command=cadastra_candidato).pack(pady=5)
     tk.Button(janela, text="Iniciar Votação", command=iniciar_votacao).pack(pady=5)
     tk.Button(janela, text="Encerrar Votação", command=encerrar_votacao).pack(pady=5)
 
@@ -36,49 +40,92 @@ def cadastra_candidato():
     janela_cadastro = tk.Toplevel(janela)
     janela_cadastro.title("Cadastro de Candidato")
     janela_cadastro.geometry(f"{largura_tela}x{altura_tela}")
+
+    caminho_imagem = tk.StringVar(value="")
+    foto = [None]
+
     tk.Label(janela_cadastro, text="Número do Candidato:").pack(pady=5)
     entrada_numero = tk.Entry(janela_cadastro)
     entrada_numero.pack(pady=5)
+
     tk.Label(janela_cadastro, text="Nome do Candidato:").pack(pady=5)
     entrada_nome = tk.Entry(janela_cadastro)
     entrada_nome.pack(pady=5)
+
     tk.Label(janela_cadastro, text="Partido do Candidato:").pack(pady=5)
     entrada_partido = tk.Entry(janela_cadastro)
     entrada_partido.pack(pady=5)
 
+    lbl_caminho = tk.Label(janela_cadastro, text="Nenhuma foto selecionada")
+    lbl_caminho.pack(pady=5)
+
+    lbl_imagem = tk.Label(janela_cadastro)
+    lbl_imagem.pack(pady=10)
+
+    def selecionar_imagem():
+            caminho = filedialog.askopenfilename(
+                parent=janela_cadastro,
+                title="Selecione uma foto",
+                filetypes=(("Arquivos de imagem", "*.jpg *.jpeg *.png"), ("Todos os arquivos", "*.*"))
+            )
+
+
+            if caminho:  # Se usuário selecionou algo
+                try:
+                    caminho_imagem.set(caminho)
+                    lbl_caminho.config(text=caminho)
+                    
+                    # Carrega e exibe a imagem
+                    img = Image.open(caminho)
+                    img.thumbnail((150, 150))
+                    foto[0] = ImageTk.PhotoImage(img)  # Mantém referência
+                    lbl_imagem.config(image=foto[0])
+                    
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Não foi possível carregar a imagem:\n{str(e)}")
+
     def salvar_candidato():
-        with open (arquivo_json, "r") as file:
-            candidatos = json.load(file)
+        # with open (arquivo_json, "r") as file:
+        #     candidatos_json = json.load(file)
         
         numero = entrada_numero.get()
         nome = entrada_nome.get()
         partido = entrada_partido.get()
 
 
-        candidatos.append
+        # candidatos.append
 
         if not numero or not nome or not partido:
             messagebox.showwarning("Erro", "Preencha todos os campos.")
             return
-        candidatos.append({"numero": numero, "nome": nome, "partido": partido, "votos": 0})
+        
+        # candidatos.append({"numero": numero, "nome": nome, "partido": partido, "votos": 0})
+        candidatos_json.append({"numero": numero, "nome": nome, "partido": partido, "votos": 0, "imagem": caminho_imagem.get()})
         messagebox.showinfo("Sucesso", "Candidato cadastrado com sucesso!")
+        
+        with open (arquivo_json, "w") as file:
+            json.dump(candidatos_json, file, indent=4)
+        
+
         janela_cadastro.destroy()
+
+    tk.Button(janela_cadastro, text="selecionar imagem", command=selecionar_imagem).pack(pady=5)
 
     tk.Button(janela_cadastro, text="Salvar", command=salvar_candidato).pack(pady=5)
 
 def lista_candidatos():
+    with open(arquivo_json, "r") as file:
+        candidatos_json = json.load(file)
+
     janela_candidatos = tk.Toplevel(janela)
     janela_candidatos.title("Candidatos")
     janela_candidatos.geometry(f"{largura_tela}x{altura_tela}")
 
     fotos = []
     indice_atual = [0]
-
-    with open(arquivo_json, "r") as file:
-        candidatos = json.load(file)
     
     try:
-        imagem = Image.open(candidatos[indice_atual[0]]["imagem"]).resize((150, 150))
+        imagem = Image.open(candidatos_json[indice_atual[0]]["imagem"]).resize((150, 150))
         foto = ImageTk.PhotoImage(imagem)
         fotos.append(foto)
 
@@ -89,21 +136,21 @@ def lista_candidatos():
         
     imagem_label.pack()
 
-    info_label = tk.Label(janela_candidatos, text=f"{candidatos[indice_atual[0]]['nome']} ({candidatos[indice_atual[0]]['partido']}) {candidatos[indice_atual[0]]['numero']}")
+    info_label = tk.Label(janela_candidatos, text=f"{candidatos_json[indice_atual[0]]['nome']} ({candidatos_json[indice_atual[0]]['partido']}) {candidatos_json[indice_atual[0]]['numero']}")
     info_label.pack()
     
     def trocar_imagem():
         try:
-            indice_atual[0] = (indice_atual[0] + 1) % len(candidatos)
-            novo_caminho = candidatos[indice_atual[0]]["imagem"]
+            indice_atual[0] = (indice_atual[0] + 1) % len(candidatos_json)
+            novo_caminho = candidatos_json[indice_atual[0]]["imagem"]
             imagem = Image.open(novo_caminho).resize((150, 150))
             nova_foto = ImageTk.PhotoImage(imagem)
             fotos.append(nova_foto)
             imagem_label.configure(image=nova_foto)
-        except (KeyError, FileNotFoundError):
+        except (KeyError, FileNotFoundError, AttributeError):
             imagem_label.configure(image="", text="Foto do candidato não registrada")
             
-        info_label.configure(text=f"{candidatos[indice_atual[0]]['nome']} ({candidatos[indice_atual[0]]['partido']}) {candidatos[indice_atual[0]]['numero']}")
+        info_label.configure(text=f"{candidatos_json[indice_atual[0]]['nome']} ({candidatos_json[indice_atual[0]]['partido']}) {candidatos_json[indice_atual[0]]['numero']}")
 
     tk.Button(janela_candidatos, text="Proximo", command=trocar_imagem).pack(pady=5)
 
@@ -133,7 +180,7 @@ def registrar_voto():
             if matricula in votantes:
                 messagebox.showwarning("Erro", "Esta matrícula já votou.")
                 return
-            candidato = next((c for c in candidatos if c["numero"] == voto), None)
+            candidato = next((c for c in candidatos_json if c["numero"] == voto), None)
             if candidato:
                 confirmar = messagebox.askyesno("Confirmação", f"Confirmar voto para {candidato['nome']} ({candidato['partido']})?")
                 if confirmar:
@@ -156,9 +203,9 @@ def imprime_relatorio():
     janela_relatorio = tk.Toplevel(janela)
     janela_relatorio.title("Resultados")
     janela_relatorio.geometry(f"{largura_tela}x{altura_tela}")
-    total_votos = sum(c["votos"] for c in candidatos)
+    total_votos = sum(c["votos"] for c in candidatos_json)
     if total_votos > 0:
-        for candidato in candidatos:
+        for candidato in candidatos_json:
             tk.Label(janela_relatorio, text=f"{candidato['nome']} ({candidato['partido']}): {candidato['votos']} votos").pack(pady=5)
     else:
         tk.Label(janela_relatorio, text="Não houve votos válidos.").pack(pady=5)
