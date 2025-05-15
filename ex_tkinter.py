@@ -28,6 +28,23 @@ altura_tela = janela.winfo_screenheight()
 x = (largura_tela // 2) - (largura // 2)
 y = (altura_tela // 2) - (altura // 2)
 
+cor_normal = "SystemButtonFace"
+cor_hover = "#d9d9d9"
+
+def hover(widget, cor_normal, cor_hover):
+    # Configuração inicial
+    widget.config(bg=cor_normal, cursor="")  # Cursor padrão inicialmente
+    
+    # Evento quando o mouse entra no widget
+    widget.bind("<Enter>", lambda e: (
+        e.widget.config(bg=cor_hover, cursor="hand2")
+    ))
+    
+    # Evento quando o mouse sai do widget
+    widget.bind("<Leave>", lambda e: (
+        e.widget.config(bg=cor_normal, cursor="")
+    ))
+
 def mostra_menu():
     janela.geometry(f"{largura}x{altura}+{x}+{y}")
     janela.configure(padx=20, pady=20)
@@ -35,13 +52,35 @@ def mostra_menu():
     # Limpa widgets anteriores
     for widget in janela.winfo_children():
         widget.destroy()
-    
-    tk.Label(janela, text="Escolha uma opção:").pack(pady=10)
-    tk.Button(janela, text="Candidatos", command=lista_candidatos).pack(pady=5)
-    tk.Button(janela, text="Cadastro de Candidato", command=cadastra_candidato).pack(pady=5)
-    tk.Button(janela, text="Iniciar Votação", command=digitar_cpf).pack(pady=5)
-    tk.Button(janela, text="Encerrar Votação", command=encerrar_votacao).pack(pady=5)
 
+    lbl_titulo = tk.Label(janela, text="Escolha uma opção:")
+    btn_candidatos = tk.Button(janela, text="Candidatos", command=lista_candidatos)
+    btn_cadastro = tk.Button(janela, text="Cadastro de Candidato", command=cadastra_candidato)
+    btn_votacao = tk.Button(janela, text="Iniciar Votação", command=digitar_cpf)
+    btn_encerrar = tk.Button(janela, text="Encerrar Votação", command=encerrar_votacao)
+
+    # Posiciona os widgets
+    lbl_titulo.pack(pady=10)
+    btn_candidatos.pack(pady=5, fill=tk.X, padx=50)
+    btn_cadastro.pack(pady=5, fill=tk.X, padx=50)
+    btn_votacao.pack(pady=5, fill=tk.X, padx=50)
+    btn_encerrar.pack(pady=5, fill=tk.X, padx=50)
+
+    # Aplica hover apenas nos botões (não no Label)
+    hover(btn_candidatos, cor_normal, cor_hover)
+    hover(btn_cadastro, cor_normal, cor_hover)
+    hover(btn_votacao, cor_normal, cor_hover)
+    hover(btn_encerrar, cor_normal, cor_hover)
+
+def administrador():
+    janela_senha_administrador = tk.Toplevel(janela)
+    janela_senha_administrador.title("Digite a senha")
+    janela_senha_administrador.geometry(f"{400}x{250}+{x + 200}+{y + 125}")
+
+    tk.Label(janela_senha_administrador, text="Digite a senha:")
+    entrada_senha = tk.Entry(janela_senha_administrador)
+    entrada_senha.pack(pady=5)
+    
 def cadastra_candidato():
     janela_cadastro = tk.Toplevel(janela)
     janela_cadastro.title("Cadastro de Candidato")
@@ -189,19 +228,19 @@ def lista_candidatos():
 def digitar_cpf():
     janela_informacoes = tk.Toplevel(janela)
     janela_informacoes.title("Dados do Eleitor")
-    janela_informacoes.geometry(f"{largura}x{altura}+{x}+{y}")
+    janela_informacoes.geometry(f"{400}x{250}+{x + 200}+{y + 125}")
     janela_informacoes.grab_set()
 
-    tk.Label(janela_informacoes, text="Digite seu nome completo:").pack(pady=5)
-    entrada_nome = tk.Entry(janela_informacoes)
+    tk.Label(janela_informacoes, text="Digite seu nome completo:", font=("Arial", 10, "bold")).pack(pady=(19, 0))
+    entrada_nome = tk.Entry(janela_informacoes, width=30)
     entrada_nome.pack(pady=5)
 
-    tk.Label(janela_informacoes, text="RG (apenas números):").pack(pady=5)
-    entrada_rg = tk.Entry(janela_informacoes)
+    tk.Label(janela_informacoes, text="RG (apenas números):", font=("Arial", 10, "bold")).pack(pady=(5, 0))
+    entrada_rg = tk.Entry(janela_informacoes, width=30)
     entrada_rg.pack(pady=5)
 
-    tk.Label(janela_informacoes, text="CPF (apenas números):").pack(pady=5)
-    entrada_cpf = tk.Entry(janela_informacoes)
+    tk.Label(janela_informacoes, text="CPF (apenas números):", font=("Arial", 10, "bold")).pack(pady=(5, 0))
+    entrada_cpf = tk.Entry(janela_informacoes, width=30)
     entrada_cpf.pack(pady=5)
     
     def verificar_informacoes():
@@ -223,11 +262,11 @@ def digitar_cpf():
             
         votantes.add(cpf)  # Registra o CPF para evitar votos duplicados
         janela_informacoes.destroy()
-        iniciar_votacao(nome, cpf, rg)
+        iniciar_votacao(nome, cpf)
 
     tk.Button(janela_informacoes, text="Continuar", command=verificar_informacoes).pack(pady=10)
 
-def iniciar_votacao(nome, cpf, rg):
+def iniciar_votacao(nome, cpf):
     global votacao_ativa
     votacao_ativa = True
     
