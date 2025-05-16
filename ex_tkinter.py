@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox, filedialog
 import json
 from PIL import Image, ImageTk
@@ -48,41 +49,68 @@ def hover(widget, cor_normal, cor_hover):
 def mostra_menu():
     janela.geometry(f"{largura}x{altura}+{x}+{y}")
     janela.configure(padx=20, pady=20)
+
+    janela.bind("<Control-Alt-m>", administrador)
     
     # Limpa widgets anteriores
     for widget in janela.winfo_children():
         widget.destroy()
 
     lbl_titulo = tk.Label(janela, text="Escolha uma opção:")
-    btn_candidatos = tk.Button(janela, text="Candidatos", command=lista_candidatos)
-    btn_cadastro = tk.Button(janela, text="Cadastro de Candidato", command=cadastra_candidato)
     btn_votacao = tk.Button(janela, text="Iniciar Votação", command=digitar_cpf)
     btn_encerrar = tk.Button(janela, text="Encerrar Votação", command=encerrar_votacao)
 
     # Posiciona os widgets
     lbl_titulo.pack(pady=10)
-    btn_candidatos.pack(pady=5, fill=tk.X, padx=50)
-    btn_cadastro.pack(pady=5, fill=tk.X, padx=50)
     btn_votacao.pack(pady=5, fill=tk.X, padx=50)
     btn_encerrar.pack(pady=5, fill=tk.X, padx=50)
 
     # Aplica hover apenas nos botões (não no Label)
-    hover(btn_candidatos, cor_normal, cor_hover)
-    hover(btn_cadastro, cor_normal, cor_hover)
     hover(btn_votacao, cor_normal, cor_hover)
     hover(btn_encerrar, cor_normal, cor_hover)
 
-def administrador():
-    janela_senha_administrador = tk.Toplevel(janela)
-    janela_senha_administrador.title("Digite a senha")
-    janela_senha_administrador.geometry(f"{400}x{250}+{x + 200}+{y + 125}")
+def administrador(event=None):
+    janela_senha_adm = tk.Toplevel(janela)
+    janela_senha_adm.title("Digite a senha")
+    janela_senha_adm.geometry(f"{400}x{250}+{x + 200}+{y + 125}")
 
-    tk.Label(janela_senha_administrador, text="Digite a senha:")
-    entrada_senha = tk.Entry(janela_senha_administrador)
+    tk.Label(janela_senha_adm, text="Digite a senha:").pack(pady=5)
+    entrada_senha = tk.Entry(janela_senha_adm)
     entrada_senha.pack(pady=5)
     
+    def verificacao():
+        senha = entrada_senha.get()
+        if senha == "1234":
+            messagebox.showwarning("Olá!", "Bem vindo de volta administrador!")
+            menu_administrador(janela_senha_adm)
+        else:
+            messagebox.showerror("Alerta!", "Vaza daqui vagabundo!")
+
+    btn_acessar = tk.Button(janela_senha_adm, text="Entrar", command=verificacao)
+    btn_acessar.pack(pady=5)
+
+    hover(btn_acessar, cor_normal, cor_hover)
+
+def menu_administrador(janela_senha_adm):
+    global janela_adm
+    janela_senha_adm.destroy()
+    janela_adm = tk.Toplevel(janela)
+    janela_adm.geometry(f"{largura}x{altura}+{x}+{y}")
+    janela_adm.configure(padx=20, pady=20)
+
+    lbl_titulo_adm = tk.Label(janela_adm, text="O que faremos hoje?")
+    btn_candidatos = tk.Button(janela_adm, text="Lista de andidatos", command=lista_candidatos)
+    btn_cadastro = tk.Button(janela_adm, text="Cadastro de Candidato", command=cadastra_candidato)
+
+    lbl_titulo_adm.pack(pady=10)
+    btn_candidatos.pack(pady=5, fill=tk.X, padx=50)
+    btn_cadastro.pack(pady=5, fill=tk.X, padx=50)
+
+    hover(btn_candidatos, cor_normal, cor_hover)
+    hover(btn_cadastro, cor_normal, cor_hover)
+
 def cadastra_candidato():
-    janela_cadastro = tk.Toplevel(janela)
+    janela_cadastro = tk.Toplevel(janela_adm)
     janela_cadastro.title("Cadastro de Candidato")
     janela_cadastro.geometry(f"{largura}x{altura}+{x}+{y}")
 
@@ -111,7 +139,7 @@ def cadastra_candidato():
     def selecionar_imagem():
         caminho = filedialog.askopenfilename(
             title="Selecione uma foto",
-            filetypes=(("Arquivos de imagem", "*.jpg *.jpeg *.png"), ("Todos os arquivos", "*.*"))
+            filetypes=(("Arquivos de imagem", "*.jpg *.jpeg *.png"), ("Todos os arquivos", "*.*")), parent=janela_cadastro
         )
         if caminho:
             try:
@@ -266,6 +294,43 @@ def digitar_cpf():
 
     tk.Button(janela_informacoes, text="Continuar", command=verificar_informacoes).pack(pady=10)
 
+def scroll_imagens(container):
+    imagens = []  # Lista para armazenar referências das imagens
+
+    for candidato in candidatos_json:
+        try:
+            # 1. Carrega a imagem com tratamento de erro
+            imagem = Image.open(candidato["imagem"]).resize((150, 150))
+            imagem_tk = ImageTk.PhotoImage(imagem)
+            imagens.append(imagem_tk)  # Mantém a referência
+
+            # 2. Cria um frame para cada candidato (cartão)
+            frame_candidato = tk.Frame(container)
+            frame_candidato.pack(pady=10)
+
+            # 3. Exibe a imagem (COM REFERÊNCIA ADICIONAL)
+            lbl_imagem = tk.Label(frame_candidato, image=imagem_tk)
+            lbl_imagem.image = imagem_tk  # Referência extra (CRÍTICO!)
+            lbl_imagem.pack(padx=(0, 0))
+
+            # 4. Exibe informações do candidato
+            tk.Label(
+                frame_candidato,
+                text=f"{candidato['numero']} - {candidato['nome']}\n{candidato['partido']}",
+                font=('Arial', 10)
+            ).pack(padx=(0, 0))
+
+        except Exception as e:
+            print(f"Erro ao carregar imagem: {e}")
+            # Placeholder se a imagem falhar
+            tk.Label(
+                container,
+                text=f"{candidato['numero']} - {candidato['nome']}\n(Imagem não disponível)",
+                font=('Arial', 10)
+            ).pack(pady=10)
+
+    return imagens  # Retorna a lista de referências
+
 def iniciar_votacao(nome, cpf):
     global votacao_ativa
     votacao_ativa = True
@@ -275,13 +340,55 @@ def iniciar_votacao(nome, cpf):
     janela_votacao.geometry(f"{largura}x{altura}+{x}+{y}")
     janela_votacao.grab_set()
 
-    tk.Label(janela_votacao, 
-             text=f"Eleitor: {nome}\nCPF: {cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}",
-             font=('Arial', 12)).pack(pady=10)
+    # --- Área de Scroll ---
+    # Frame principal para organizar os widgets
+    main_frame = tk.Frame(janela_votacao)
+    main_frame.pack(fill=tk.BOTH, expand=True)
 
-    tk.Label(janela_votacao, text="Digite o número do candidato:", font=('Arial', 14)).pack(pady=10)
-    entrada_voto = tk.Entry(janela_votacao, font=('Arial', 16), justify='center')
-    entrada_voto.pack(pady=10)
+    # 1. Canvas e Scrollbar
+    canvas = tk.Canvas(main_frame, width=200)
+
+    # Habilita o scroll com o mouse (adicione estas linhas)
+    canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))  # Para Linux (scroll up)
+    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))   # Para Linux (scroll down)
+
+    scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+
+    # 2. Frame INTERNO para os candidatos (dentro do canvas)
+    inner_frame = tk.Frame(canvas)
+    inner_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+    inner_frame.configure(padx=0)
+
+    # 3. Vincula o frame ao canvas
+    canvas.create_window((0, 0), window=inner_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # 4. Layout do scroll
+    canvas.pack(side=tk.LEFT, fill=tk.Y, expand=False, padx=(50, 0))
+    scrollbar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 0))
+
+    # --- Carrega as imagens (com referência retornada) ---
+    imagens = scroll_imagens(inner_frame)  # As imagens persistem aqui!
+
+    # --- Área de votação ---
+    tk.Label(
+        main_frame,
+        text=f"Eleitor: {nome}\nCPF: {cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}",
+        font=('Arial', 12)
+    ).pack(pady=10, padx=(0, 0))
+
+    tk.Label(
+        main_frame,
+        text="Digite o número do candidato:",
+        font=('Arial', 14)
+    ).pack(pady=10, padx=(0, 0))
+
+    entrada_voto = tk.Entry(main_frame, font=('Arial', 16), justify='center')
+    entrada_voto.pack(pady=10, padx=(0, 0))
     entrada_voto.focus_set()
 
     def confirmar_voto():
@@ -314,7 +421,7 @@ def iniciar_votacao(nome, cpf):
                 janela_votacao.destroy()
 
     tk.Button(janela_votacao, text="Confirmar Voto", command=confirmar_voto, 
-              bg="green", fg="white", font=('Arial', 12)).pack(pady=20)
+            bg="green", fg="white", font=('Arial', 12)).pack(pady=20)
 
 def imprime_relatorio():
     janela_relatorio = tk.Toplevel(janela)
@@ -323,7 +430,7 @@ def imprime_relatorio():
 
     total_votos = sum(c["votos"] for c in candidatos_json)
     tk.Label(janela_relatorio, text=f"RELATÓRIO FINAL\nTotal de votos: {total_votos}", 
-             font=('Arial', 14, 'bold')).pack(pady=10)
+            font=('Arial', 14, 'bold')).pack(pady=10)
 
     if total_votos > 0:
         # Ordena candidatos por votos (decrescente)
@@ -335,8 +442,8 @@ def imprime_relatorio():
         for i, candidato in enumerate(candidatos_ordenados, 1):
             percentual = (candidato["votos"] / total_votos) * 100 if total_votos > 0 else 0
             tk.Label(frame_resultados, 
-                     text=f"{i}º - {candidato['nome']} ({candidato['partido']}): {candidato['votos']} votos ({percentual:.1f}%)",
-                     font=('Arial', 12)).pack(anchor='w', padx=20)
+                    text=f"{i}º - {candidato['nome']} ({candidato['partido']}): {candidato['votos']} votos ({percentual:.1f}%)",
+                    font=('Arial', 12)).pack(anchor='w', padx=20)
     else:
         tk.Label(janela_relatorio, text="Nenhum voto foi registrado.", font=('Arial', 12)).pack(pady=20)
 
