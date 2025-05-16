@@ -391,6 +391,59 @@ def iniciar_votacao(nome, cpf):
     entrada_voto.pack(pady=10, padx=(0, 0))
     entrada_voto.focus_set()
 
+    numeros = []
+
+    def on_key_press(event):
+        # Permite apenas números, backspace e delete
+        if event.char.isdigit():
+            numeros.append(event.char)
+            print(numeros)
+
+            entrada_voto.delete(0, tk.END)
+            entrada_voto.insert(0, ''.join(numeros))
+            filtrar_candidatos(''.join(numeros))
+
+        elif event.keysym in ('BackSpace', 'Delete'):
+            if numeros:
+                numeros.pop()
+                entrada_voto.delete(0, tk.END)
+                entrada_voto.insert(0, ''.join(numeros))
+                filtrar_candidatos(''.join(numeros))
+        return "break"  # Impede o comportamento padrão do Entry
+
+    # Vincula o evento de teclado
+    entrada_voto.bind("<Key>", on_key_press)
+
+    imagens_tk = []
+
+    def filtrar_candidatos(numero):
+        for widget in inner_frame.winfo_children():
+            widget.destroy()
+
+        for candidato in candidatos_json:
+            numero_candidato = candidato["numero"]
+
+            # Verifica se o número do candidato começa com os dígitos já digitados
+            if numero_candidato.startswith(numero):
+                # Carrega a imagem
+                imagem = Image.open(candidato["imagem"])
+                imagem = imagem.resize((150, 150))  # Redimensiona se necessário
+                imagem_tk = ImageTk.PhotoImage(imagem)
+                imagens_tk.append(imagem_tk)  # Guarda a referência
+
+                # Cria e exibe um Label com a imagem
+                label_imagem = tk.Label(inner_frame, image=imagem_tk)
+                label_imagem.pack(pady=20)
+
+                # Cria e exibe um Label com o nome do candidato
+                label_nome = tk.Label(inner_frame, text=f"{candidato['nome']} ({numero_candidato})")
+                label_nome.pack()
+                print(f"Candidato possível: {candidato['nome']} (número: {numero_candidato})")
+
+        
+    
+    # entrada_voto.bind("<Key>", tecla_pressionada)
+
     def confirmar_voto():
         voto = entrada_voto.get().strip()
         
@@ -420,7 +473,8 @@ def iniciar_votacao(nome, cpf):
                 messagebox.showinfo("Voto Nulo", "Voto nulo registrado", parent=janela_votacao)
                 janela_votacao.destroy()
 
-    tk.Button(janela_votacao, text="Confirmar Voto", command=confirmar_voto, 
+    
+    tk.Button(main_frame, text="Confirmar Voto", command=confirmar_voto, 
             bg="green", fg="white", font=('Arial', 12)).pack(pady=20)
 
 def imprime_relatorio():
