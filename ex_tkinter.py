@@ -11,6 +11,8 @@ from reportlab.pdfgen import canvas
 
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 # Configurações iniciais
 arquivo_json = "candidatos.json"
 
@@ -509,12 +511,14 @@ def imprime_relatorio():
         tk.Label(janela_relatorio, text="Nenhum voto foi registrado.", font=('Arial', 12)).pack(pady=20)
 
     def gerar_pdf():
-        # pdf = canvas.Canvas("Exemplo.pdf", pagesize=A4)
-        # pdf.setTitle("Exemplo de pdf")
-        # pdf.drawString(100, 150, "Olá mundo")
 
         titulos_dados = []
         dados = []
+
+        def votos(pct, dados):
+                calculo = int(pct/100.*np.sum(dados))
+
+                return f"{pct:.1f}%\n({calculo:d} votos) "
 
         if len(candidatos_json) > 5:
             candidatos_ordenados = sorted(candidatos_json, key=lambda c: c["votos"], reverse=True)
@@ -529,29 +533,52 @@ def imprime_relatorio():
             titulos_dados.append("outros")
             dados.append(votos_outros)
 
-            figl, axl = plt.subplots()
+            figl, axl = plt.subplots(figsize=(6, 6), subplot_kw=dict(aspect="equal"))
 
-            axl.pie(dados, labels=titulos_dados, autopct="%1.1f%%", shadow=True, startangle=90)
+            wedge, text, autotext = axl.pie(dados, autopct=lambda pct: votos(pct, dados), shadow=True, startangle=90)
+            axl.legend(wedge, 
+            titulos_dados, 
+            title="Candidatos",
+            loc='lower center',
+            bbox_to_anchor=(0.5, -0.15),  # centraliza e posiciona abaixo
+            ncol=2,  # número de colunas (ajuste como quiser)
+            frameon=True,  # remove a caixa da legenda (opcional)
+            bbox_transform=plt.gcf().transFigure)
 
-            axl.axis("equal")
+            axl.set_title("Resultado dos votos")
 
-            plt.show()
+            plt.setp(autotext, size=8, weight="bold")
 
         else:
             for candidatos in candidatos_json:
                 titulos_dados.append(candidatos["nome"])
                 dados.append(int(candidatos["votos"]))
+            
+            figl, axl = plt.subplots(figsize=(6, 6), subplot_kw=dict(aspect="equal"))
 
-            figl, axl = plt.subplots()
+            wedge, text, autotext = axl.pie(dados, autopct=lambda pct: votos(pct, dados), shadow=True, startangle=90)
+            axl.legend(wedge, 
+            titulos_dados, 
+            title="Candidatos",
+            loc='lower center',
+            bbox_to_anchor=(0.5, -0.15),  # centraliza e posiciona abaixo
+            ncol=2,  # número de colunas (ajuste como quiser)
+            frameon=True,  # remove a caixa da legenda (opcional)
+            bbox_transform=plt.gcf().transFigure)
 
-            axl.pie(dados, labels=titulos_dados, autopct="%1.1f%%", shadow=True, startangle=90)
+            axl.set_title("Resultado dos votos")
 
-            axl.axis("equal")
+            plt.setp(autotext, size=8, weight="bold")
+        
+        plt.savefig("grafico.png", bbox_inches='tight')
+        plt.close()
 
-            plt.show()
+        pdf = canvas.Canvas("Exemplo.pdf", pagesize=A4)
+        pdf.setTitle("Exemplo de pdf")
+        pdf.drawImage("grafico.png", x=100, y=200, width=400, height=500)
 
-        # pdf.showPage()
-        # pdf.save()
+        pdf.showPage()
+        pdf.save()
 
     tk.Button(janela_relatorio, text="Baixar relatório", command=gerar_pdf).pack(pady=10)
 
