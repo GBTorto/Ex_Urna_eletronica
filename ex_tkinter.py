@@ -1,8 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, filedialog
+
 import json
+
 from PIL import Image, ImageTk
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+import matplotlib.pyplot as plt
 
 # Configurações iniciais
 arquivo_json = "candidatos.json"
@@ -501,7 +508,52 @@ def imprime_relatorio():
     else:
         tk.Label(janela_relatorio, text="Nenhum voto foi registrado.", font=('Arial', 12)).pack(pady=20)
 
-    tk.Button(janela_relatorio, text="Fechar", command=janela_relatorio.destroy).pack(pady=10)
+    def gerar_pdf():
+        # pdf = canvas.Canvas("Exemplo.pdf", pagesize=A4)
+        # pdf.setTitle("Exemplo de pdf")
+        # pdf.drawString(100, 150, "Olá mundo")
+
+        titulos_dados = []
+        dados = []
+
+        if len(candidatos_json) > 5:
+            candidatos_ordenados = sorted(candidatos_json, key=lambda c: c["votos"], reverse=True)
+            top5 = candidatos_ordenados[:5]
+
+            outros = candidatos_ordenados[5:]
+            votos_outros = sum(int(c["votos"]) for c in outros)
+
+            titulos_dados = [c["nome"] for c in top5]
+            dados = [c["votos"] for c in top5]
+
+            titulos_dados.append("outros")
+            dados.append(votos_outros)
+
+            figl, axl = plt.subplots()
+
+            axl.pie(dados, labels=titulos_dados, autopct="%1.1f%%", shadow=True, startangle=90)
+
+            axl.axis("equal")
+
+            plt.show()
+
+        else:
+            for candidatos in candidatos_json:
+                titulos_dados.append(candidatos["nome"])
+                dados.append(int(candidatos["votos"]))
+
+            figl, axl = plt.subplots()
+
+            axl.pie(dados, labels=titulos_dados, autopct="%1.1f%%", shadow=True, startangle=90)
+
+            axl.axis("equal")
+
+            plt.show()
+
+        # pdf.showPage()
+        # pdf.save()
+
+    tk.Button(janela_relatorio, text="Baixar relatório", command=gerar_pdf).pack(pady=10)
 
 def encerrar_votacao():
     global votacao_ativa

@@ -3,42 +3,42 @@
         "numero": "12",
         "nome": "Ana Costa",
         "partido": "PDA",
-        "votos": 0,
+        "votos": 10,
         "imagem": "imagens_candidatos/mulher1.png"
     },
     {
         "numero": "34",
         "nome": "Carlos Lima",
         "partido": "VND",
-        "votos": 0,
+        "votos": 20,
         "imagem": "imagens_candidatos/homem1.png"
     },
     {
         "numero": "56",
         "nome": "Marina Rocha",
         "partido": "PLS",
-        "votos": 0,
+        "votos": 2,
         "imagem": "imagens_candidatos/mulher2.png"
     },
     {
         "numero": "78",
         "nome": "Rafael Teixeira",
         "partido": "PRT",
-        "votos": 0,
+        "votos": 6,
         "imagem": "imagens_candidatos/homem2.png"
     },
     {
         "numero": "91",
         "nome": "Julia Martins",
         "partido": "PLS",
-        "votos": 0,
+        "votos": 32,
         "imagem": "imagens_candidatos/mulher3.png"
     },
     {
         "numero": "17",
         "nome": "Fernando Ribeiro",
         "partido": "PRT",
-        "votos": 0,
+        "votos": 1,
         "imagem": "imagens_candidatos/homem5.png"
     },
     {
@@ -52,7 +52,7 @@
         "numero": "68",
         "nome": "Bruno Alves",
         "partido": "VND",
-        "votos": 0,
+        "votos": 11,
         "imagem": "imagens_candidatos/homem4.png"
     }
 ]
