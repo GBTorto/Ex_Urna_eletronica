@@ -15,6 +15,7 @@ import numpy as np
 
 # Configurações iniciais
 arquivo_json = "candidatos.json"
+arquivo_json_votantes = "votantes.json"
 
 try:
     with open(arquivo_json, "r") as file:
@@ -24,7 +25,14 @@ except FileNotFoundError:
     with open(arquivo_json, "w") as file:
         json.dump(candidatos_json, file)
 
-votantes = set()  # Agora armazena apenas CPFs (strings)
+try:
+    with open(arquivo_json_votantes, "r") as file2:
+        votantes_json = json.load(file2)
+except FileNotFoundError:
+    votantes_json = []
+    with open(arquivo_json, "w") as file2:
+        json.dump(votantes_json, file2)
+
 votacao_ativa = False
 
 # Janela principal
@@ -293,11 +301,17 @@ def digitar_cpf():
             messagebox.showwarning("CPF Inválido", "CPF deve conter 11 números", parent=janela_informacoes)
             return
             
-        if cpf in votantes:
+        if any (cpf_json["cpf"] == cpf for cpf_json in votantes_json):
             messagebox.showerror("Erro", "Este CPF já votou!", parent=janela_informacoes)
             return
             
-        votantes.add(cpf)  # Registra o CPF para evitar votos duplicados
+        votantes_json.append({
+            "nome": nome,
+            "rg": rg,
+            "cpf": cpf})
+
+        with open(arquivo_json_votantes, "w") as file2:
+            json.dump(votantes_json, file2, indent=4)
         janela_informacoes.destroy()
         iniciar_votacao(nome, cpf)
 
@@ -402,6 +416,24 @@ def iniciar_votacao(nome, cpf):
 
     numeros = []
 
+    def inserir_numero(num):
+        numeros.append(str(num))
+        entrada_voto.delete(0, tk.END)
+        entrada_voto.insert(0, ''.join(numeros))
+        filtrar_candidatos(''.join(numeros))
+
+    pos_y = 190
+    pos_x = 453
+    for a in range(3):
+        espacamento = a * 60
+        tk.Button(main_frame, text=(a + 1), command=lambda n=a+1: inserir_numero(n), width=5, height=3).place(x=pos_x +(espacamento), y=pos_y)
+    for a in range(3):
+        espacamento = a * 60
+        tk.Button(main_frame, text=(a + 4), command=lambda n=a+4: inserir_numero(n), width=5, height=3).place(x=pos_x +(espacamento), y=(pos_y + 80))
+    for a in range(3):
+        espacamento = a * 60
+        tk.Button(main_frame, text=(a + 7), command=lambda n=a+7: inserir_numero(n), width=5, height=3).place(x=pos_x +(espacamento), y=(pos_y + 160))
+
     def on_key_press(event):
         # Permite apenas números, backspace e delete
         if event.char.isdigit():
@@ -449,10 +481,6 @@ def iniciar_votacao(nome, cpf):
                 label_nome.pack()
                 print(f"Candidato possível: {candidato['nome']} (número: {numero_candidato})")
 
-        
-    
-    # entrada_voto.bind("<Key>", tecla_pressionada)
-
     def confirmar_voto():
         voto = entrada_voto.get().strip()
         
@@ -472,6 +500,9 @@ def iniciar_votacao(nome, cpf):
                 candidato["votos"] += 1
                 messagebox.showinfo("Sucesso", "Voto registrado com sucesso!", parent=janela_votacao)
                 janela_votacao.destroy()
+
+                with open(arquivo_json, "w") as file:
+                    json.dump(candidatos_json, file, indent=4)
         else:
             resposta = messagebox.askyesno(
                 "Voto Nulo",
@@ -484,7 +515,7 @@ def iniciar_votacao(nome, cpf):
 
     
     tk.Button(main_frame, text="Confirmar Voto", command=confirmar_voto, 
-            bg="green", fg="white", font=('Arial', 12)).pack(pady=20)
+            bg="green", fg="white", font=('Arial', 12)).place(y=450, x=471)
 
 def imprime_relatorio():
     janela_relatorio = tk.Toplevel(janela)
@@ -530,7 +561,7 @@ def imprime_relatorio():
             titulos_dados = [c["nome"] for c in top5]
             dados = [c["votos"] for c in top5]
 
-            titulos_dados.append("outros")
+            titulos_dados.append("Outros")
             dados.append(votos_outros)
 
             figl, axl = plt.subplots(figsize=(6, 6), subplot_kw=dict(aspect="equal"))
@@ -573,12 +604,14 @@ def imprime_relatorio():
         plt.savefig("grafico.png", bbox_inches='tight')
         plt.close()
 
-        pdf = canvas.Canvas("Exemplo.pdf", pagesize=A4)
-        pdf.setTitle("Exemplo de pdf")
+        pdf = canvas.Canvas("Relatório.pdf", pagesize=A4)
+        pdf.setTitle("Relatório das Eleições")
         pdf.drawImage("grafico.png", x=100, y=200, width=400, height=500)
 
         pdf.showPage()
         pdf.save()
+
+        janela.after(1000, janela.destroy)
 
     tk.Button(janela_relatorio, text="Baixar relatório", command=gerar_pdf).pack(pady=10)
 
